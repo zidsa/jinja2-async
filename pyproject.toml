@@ -1,0 +1,9 @@
+[project]
+name = "jinja-async"
+version = "0.1.0"
+description = "Jinja2, but with async loaders"
+readme = "README.md"
+requires-python = ">=3.14.2"
+dependencies = [
+    "jinja2>=3.1.6",
+]
