@@ -1,4 +1,5 @@
 import typing as t
+from inspect import iscoroutinefunction
 
 from jinja2.exceptions import TemplateNotFound
 from jinja2.loaders import BaseLoader
@@ -12,13 +13,13 @@ from jinja2.loaders import PrefixLoader as JinjaPrefixLoader
 from jinja2.utils import internalcode
 
 if t.TYPE_CHECKING:
-    from .environment import AsyncEnvironment, Template
+    from .environment import AsyncEnvironment, AsyncTemplate
 
 
 class AsyncBaseLoader(BaseLoader):
     async def get_source_async(
         self, environment: "AsyncEnvironment", template: str
-    ) -> tuple[str, str | None, t.Callable[[], bool] | None]:
+    ) -> tuple[str, str | None, t.Callable[[], t.Awaitable[bool] | bool] | None]:
         """Asynchronously get the template source, filename and reload helper
         for a template.
         It's passed the environment and template name and has to return a
@@ -51,7 +52,7 @@ class AsyncBaseLoader(BaseLoader):
         environment: "AsyncEnvironment",
         name: str,
         globals: t.MutableMapping[str, t.Any] | None = None,
-    ) -> "Template":
+    ) -> "AsyncTemplate":
         """Asynchronously loads a template.  This method looks up the template
         in the cache or loads one by calling :meth:`get_source_async`.
         Subclasses should not override this method as loaders working on
@@ -99,19 +100,54 @@ class DictLoader(JinjaDictLoader, AsyncBaseLoader):
     pass
 
 
-class FunctionLoader(JinjaFunctionLoader, AsyncBaseLoader):
-    pass
-
-
 class ModuleLoader(JinjaModuleLoader, AsyncBaseLoader):
     pass
 
 
-class PrefixLoader(JinjaPrefixLoader, AsyncBaseLoader):
+class FunctionLoader(JinjaFunctionLoader, AsyncBaseLoader):
+    load_func: t.Callable[
+        [str],
+        str
+        | tuple[str, str | None, t.Callable[[], t.Awaitable[bool] | bool] | None]
+        | None
+        | t.Awaitable[
+            str
+            | tuple[str, str | None, t.Callable[[], t.Awaitable[bool] | bool] | None]
+            | None
+        ],
+    ]
+
     async def get_source_async(
         self, environment: "AsyncEnvironment", template: str
-    ) -> tuple[str, str | None, t.Callable[[], bool] | None]:
-        loader, name = self.get_loader(template)
+    ) -> tuple[str, str | None, t.Callable[[], t.Awaitable[bool] | bool] | None]:
+        if iscoroutinefunction(self.load_func):
+            rv = await self.load_func(template)
+        else:
+            rv = self.load_func(template)
+
+        if rv is None:
+            raise TemplateNotFound(template)
+
+        if isinstance(rv, str):
+            return rv, None, None
+
+        return rv
+
+
+class PrefixLoader(JinjaPrefixLoader, AsyncBaseLoader):
+    mapping: t.Mapping[str, AsyncBaseLoader]
+
+    def get_loader(self, template: str) -> tuple[AsyncBaseLoader, str]: ...
+
+    async def get_source_async(
+        self, environment: "AsyncEnvironment", template: str
+    ) -> tuple[str, str | None, t.Callable[[], t.Awaitable[bool] | bool] | None]:
+        rv = self.get_loader(template)
+
+        if rv is None:
+            raise TemplateNotFound(template)
+
+        loader, name = rv
         try:
             return await loader.get_source_async(environment, name)
         except TemplateNotFound as e:
@@ -123,8 +159,13 @@ class PrefixLoader(JinjaPrefixLoader, AsyncBaseLoader):
         environment: "AsyncEnvironment",
         name: str,
         globals: t.MutableMapping[str, t.Any] | None = None,
-    ) -> "Template":
-        loader, local_name = self.get_loader(name)
+    ) -> "AsyncTemplate":
+        rv = self.get_loader(name)
+
+        if rv is None:
+            raise TemplateNotFound(name)
+
+        loader, local_name = rv
         try:
             return await loader.load_async(environment, local_name, globals)
         except TemplateNotFound as e:
@@ -139,9 +180,11 @@ class PrefixLoader(JinjaPrefixLoader, AsyncBaseLoader):
 
 
 class ChoiceLoader(JinjaChoiceLoader, AsyncBaseLoader):
+    loaders: t.Sequence[AsyncBaseLoader]
+
     async def get_source_async(
         self, environment: "AsyncEnvironment", template: str
-    ) -> tuple[str, str | None, t.Callable[[], bool] | None]:
+    ) -> tuple[str, str | None, t.Callable[[], t.Awaitable[bool] | bool] | None]:
         for loader in self.loaders:
             try:
                 return await loader.get_source_async(environment, template)
@@ -155,7 +198,7 @@ class ChoiceLoader(JinjaChoiceLoader, AsyncBaseLoader):
         environment: "AsyncEnvironment",
         name: str,
         globals: t.MutableMapping[str, t.Any] | None = None,
-    ) -> "Template":
+    ) -> "AsyncTemplate":
         for loader in self.loaders:
             try:
                 return await loader.load_async(environment, name, globals)

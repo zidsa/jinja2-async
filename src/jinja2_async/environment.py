@@ -1,17 +1,18 @@
 import os
 import typing as t
 import weakref
+from inspect import iscoroutinefunction
 
-from jinja2.environment import Environment, Template, internalcode
+from jinja2 import Environment, Template, Undefined
+from jinja2.environment import internalcode
 from jinja2.exceptions import (
     TemplateNotFound,
     TemplatesNotFound,
     TemplateSyntaxError,
-    Undefined,
     UndefinedError,
 )
 
-from .compiler import AsyncCodeGenerator, CodeGenerator
+from .compiler import AsyncCodeGenerator
 
 if t.TYPE_CHECKING:
     from .bccache import AsyncBytecodeCache
@@ -19,9 +20,9 @@ if t.TYPE_CHECKING:
 
 
 class AsyncEnvironment(Environment):
-    code_generator_class: type["CodeGenerator"] = AsyncCodeGenerator
+    code_generator_class: type["AsyncCodeGenerator"] = AsyncCodeGenerator
     bytecode_cache: t.Optional["AsyncBytecodeCache"]
-    template_class: t.Type["AsyncTemplate"]
+    template_class: type["AsyncTemplate"]
     loader: t.Optional["AsyncBaseLoader"]
 
     def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
@@ -151,7 +152,7 @@ class AsyncEnvironment(Environment):
         if self.cache is not None:
             template = self.cache.get(cache_key)
             if template is not None and (
-                not self.auto_reload or template.is_up_to_date
+                not self.auto_reload or await template.is_up_to_date_async
             ):
                 if globals:
                     template.globals.update(globals)
@@ -258,6 +259,16 @@ class AsyncEnvironment(Environment):
 
 class AsyncTemplate(Template):
     environment_class: type[Environment] = AsyncEnvironment
+    _uptodate: t.Callable[[], t.Awaitable[bool] | bool] | None
+
+    @property
+    async def is_up_to_date_async(self) -> bool:
+        """If this variable is `False` there is a newer version available."""
+        if self._uptodate is None:
+            return True
+        if iscoroutinefunction(self._uptodate):
+            return await self._uptodate()
+        return self._uptodate()
 
 
 AsyncEnvironment.template_class = AsyncTemplate

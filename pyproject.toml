@@ -1,9 +1,85 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
 [project]
-name = "jinja-async"
-version = "0.1.0"
-description = "Jinja2, but with async loaders"
+name = "jinja2-async"
+version = "2026.1.10"
+description = "Jinja2, but with async template loaders"
 readme = "README.md"
-requires-python = ">=3.14.2"
+license = { file = "LICENSE" }
+authors = [
+    { name = "fatimah", email = "fatimah.alhumaidhi@zid.sa" },
+]
+requires-python = ">=3.10"
+keywords = ["jinja", "jinja2", "templates", "asyncio", "templating engine"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
+]
 dependencies = [
     "jinja2>=3.1.6",
 ]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "coverage[toml]>=7.6.0",
+]
+lint = [
+    "pre-commit>=4.0.0",
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+]
+
+[tool.hatch.build]
+packages = ["src/jinja2_async"]
+
+[tool.ruff]
+line-length = 88
+fix = true
+show-fixes = true
+target-version = "py310"
+output-format = "full"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["jinja2_async"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.mypy]
+python_version = "3.10"
+mypy_path = ["src"]
+packages = ["jinja2_async"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+check_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[dependency-groups]
+dev = []

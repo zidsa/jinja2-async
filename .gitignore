@@ -4,10 +4,24 @@ __pycache__/
 build/
 dist/
 wheels/
-*.egg-info
+*.egg-info/
 
 # Virtual environments
 .venv
+
+# Test / coverage artifacts
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Lint / type checker caches
+.ruff_cache/
+.mypy_cache/
+
+# Task runners
+.tox/
+.nox/
 
 # Default ignored files
 /shelf/
@@ -17,3 +31,10 @@ wheels/
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+
+# IDEs / editors
+.idea/
+.vscode/
+
+# macOS
+.DS_Store

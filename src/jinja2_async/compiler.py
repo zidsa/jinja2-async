@@ -69,6 +69,37 @@ class CodeGenerator(JinjaCodeGenerator):
             self.writeline("else:")
             self.indent()
 
+        def loop_body() -> None:
+            self.indent()
+            self.simple_write("event", frame)
+            self.outdent()
+
+        if node.with_context:
+            self.writeline(
+                f"gen = template.root_render_func("
+                "template.new_context(context.get_all(), True,"
+                f" {self.dump_local_context(frame)}))"
+            )
+            self.writeline("try:")
+            self.indent()
+            self.writeline(f"{self.choose_async()}for event in gen:")
+            loop_body()
+            self.outdent()
+            self.writeline(
+                f"finally: {self.choose_async('await gen.aclose()', 'gen.close()')}"
+            )
+        elif self.environment.is_async:
+            self.writeline(
+                "for event in (await template._get_default_module_async())"
+                "._body_stream:"
+            )
+            loop_body()
+        else:
+            self.writeline("yield from template._get_default_module()._body_stream")
+
+        if node.ignore_missing:
+            self.outdent()
+
 
 class AsyncCodeGenerator(CodeGenerator):
     def choose_async(self, async_value: str = "async ", sync_value: str = "") -> str:
