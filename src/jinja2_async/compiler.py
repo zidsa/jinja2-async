@@ -1,111 +1,25 @@
+import re
+
 from jinja2.compiler import CodeGenerator as JinjaCodeGenerator
-from jinja2.compiler import CompilerExit, Frame, nodes
+
+_TEMPLATE_CALL_RE = re.compile(
+    r"((?:template|parent_template)\s*=\s*)?"
+    r"environment\.(get_template|select_template|get_or_select_template)\("
+)
 
 
-class CodeGenerator(JinjaCodeGenerator):
-    def choose_async_env(
-        self, async_value: str = "await ", sync_value: str = ""
-    ) -> str:
-        return sync_value
+class AsyncCodeGenerator(JinjaCodeGenerator):
+    def _rewrite(self, s: str) -> str:
+        def replace(m: re.Match) -> str:
+            assign, method = m.groups()
+            if assign:
+                return f"{assign}await environment.{method}_async("
+            return f"environment.{method}_async("
 
-    def visit_Extends(self, node: nodes.Extends, frame: Frame) -> None:
-        """Calls the extender."""
-        if not frame.toplevel:
-            self.fail("cannot use extend from a non top-level scope", node.lineno)
+        return _TEMPLATE_CALL_RE.sub(replace, s)
 
-        if self.extends_so_far > 0:
-            if not self.has_known_extends:
-                self.writeline("if parent_template is not None:")
-                self.indent()
-            self.writeline('raise TemplateRuntimeError("extended multiple times")')
+    def write(self, x: str) -> None:
+        super().write(self._rewrite(x))
 
-            if self.has_known_extends:
-                raise CompilerExit()
-            else:
-                self.outdent()
-
-        self.writeline(
-            f"parent_template = {self.choose_async_env()}environment.get_template(",
-            node,
-        )
-        self.visit(node.template, frame)
-        self.write(f", {self.name!r})")
-        self.writeline("for name, parent_block in parent_template.blocks.items():")
-        self.indent()
-        self.writeline("context.blocks.setdefault(name, []).append(parent_block)")
-        self.outdent()
-
-        if frame.rootlevel:
-            self.has_known_extends = True
-
-        self.extends_so_far += 1
-
-    def visit_Include(self, node: nodes.Include, frame: Frame) -> None:
-        """Handles includes."""
-        if node.ignore_missing:
-            self.writeline("try:")
-            self.indent()
-
-        func_name = "get_or_select_template"
-        if isinstance(node.template, nodes.Const):
-            if isinstance(node.template.value, str):
-                func_name = "get_template"
-            elif isinstance(node.template.value, (tuple, list)):
-                func_name = "select_template"
-        elif isinstance(node.template, (nodes.Tuple, nodes.List)):
-            func_name = "select_template"
-
-        self.writeline(
-            f"template = {self.choose_async_env()}environment.{func_name}(", node
-        )
-        self.visit(node.template, frame)
-        self.write(f", {self.name!r})")
-        if node.ignore_missing:
-            self.outdent()
-            self.writeline("except TemplateNotFound:")
-            self.indent()
-            self.writeline("pass")
-            self.outdent()
-            self.writeline("else:")
-            self.indent()
-
-        def loop_body() -> None:
-            self.indent()
-            self.simple_write("event", frame)
-            self.outdent()
-
-        if node.with_context:
-            self.writeline(
-                f"gen = template.root_render_func("
-                "template.new_context(context.get_all(), True,"
-                f" {self.dump_local_context(frame)}))"
-            )
-            self.writeline("try:")
-            self.indent()
-            self.writeline(f"{self.choose_async()}for event in gen:")
-            loop_body()
-            self.outdent()
-            self.writeline(
-                f"finally: {self.choose_async('await gen.aclose()', 'gen.close()')}"
-            )
-        elif self.environment.is_async:
-            self.writeline(
-                "for event in (await template._get_default_module_async())"
-                "._body_stream:"
-            )
-            loop_body()
-        else:
-            self.writeline("yield from template._get_default_module()._body_stream")
-
-        if node.ignore_missing:
-            self.outdent()
-
-
-class AsyncCodeGenerator(CodeGenerator):
-    def choose_async(self, async_value: str = "async ", sync_value: str = "") -> str:
-        return async_value  # AsyncEnvironment is always async
-
-    def choose_async_env(
-        self, async_value: str = "await ", sync_value: str = ""
-    ) -> str:
-        return async_value
+    def writeline(self, x: str = "", node=None, extra=0) -> None:
+        super().writeline(self._rewrite(x), node, extra)
