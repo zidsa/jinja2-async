@@ -200,7 +200,7 @@ wheels = [
 
 [[package]]
 name = "jinja2-async"
-version = "2026.1.10"
+version = "2026.1.11"
 source = { editable = "." }
 dependencies = [
     { name = "jinja2" },
