@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "jinja2-async"
-version = "2026.1.11"
+version = "2026.1.12"
 description = "Jinja2, but with async template loaders"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -44,8 +44,17 @@ lint = [
     "mypy>=1.13.0",
 ]
 
-[tool.hatch.build]
+[tool.hatch.build.targets.wheel]
 packages = ["src/jinja2_async"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/jinja2_async/**",
+    "tests/**",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
+]
 
 [tool.ruff]
 line-length = 88
