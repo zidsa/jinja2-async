@@ -138,6 +138,7 @@ class PrefixLoader(JinjaPrefixLoader, AsyncBaseLoader):
     mapping: t.Mapping[str, AsyncBaseLoader]
 
     if t.TYPE_CHECKING:
+
         def get_loader(self, template: str) -> tuple[AsyncBaseLoader, str]: ...
 
     async def get_source_async(
