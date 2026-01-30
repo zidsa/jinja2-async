@@ -1,7 +1,20 @@
 import pytest
 from jinja2.exceptions import TemplateRuntimeError
 
-from jinja2_async import AsyncEnvironment, AsyncSandboxedEnvironment, DictLoader
+from jinja2_async import (
+    AsyncCodeGenerator,
+    AsyncEnvironment,
+    AsyncSandboxedEnvironment,
+    DictLoader,
+)
+
+
+def test_async_code_generator_choose_async_returns_async_value() -> None:
+    """Verify choose_async always returns the async variant to force async codegen."""
+    generator = AsyncCodeGenerator.__new__(AsyncCodeGenerator)
+    assert generator.choose_async() == "async "
+    assert generator.choose_async("ASYNC ", "SYNC ") == "ASYNC "
+    assert generator.choose_async(sync_value="ignored") == "async "
 
 
 @pytest.mark.asyncio

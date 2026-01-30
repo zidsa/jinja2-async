@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "jinja2-async"
-version = "2026.1.12"
+version = "2026.1.30"
 description = "Jinja2, but with async template loaders"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -31,6 +31,11 @@ classifiers = [
 dependencies = [
     "jinja2>=3.1.6",
 ]
+
+[project.urls]
+Homepage = "https://github.com/zidsa/jinja2-async"
+Repository = "https://github.com/zidsa/jinja2-async"
+Issues = "https://github.com/zidsa/jinja2-async/issues"
 
 [project.optional-dependencies]
 test = [

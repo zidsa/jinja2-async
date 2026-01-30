@@ -9,6 +9,9 @@ _TEMPLATE_CALL_RE = re.compile(
 
 
 class AsyncCodeGenerator(JinjaCodeGenerator):
+    def choose_async(self, async_value: str = "async ", sync_value: str = "") -> str:
+        return async_value
+
     def _rewrite(self, s: str) -> str:
         def replace(m: re.Match) -> str:
             assign, method = m.groups()

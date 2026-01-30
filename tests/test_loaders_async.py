@@ -62,6 +62,28 @@ async def test_prefix_loader_translates_template_not_found_name() -> None:
     assert exc.value.name == "a/missing.txt"
 
 
+def test_prefix_loader_get_loader_returns_correct_loader_and_name() -> None:
+    """Verify PrefixLoader.get_loader works correctly (not overridden by type stub)."""
+    inner_loader = DictLoader({"one.txt": "1", "two.txt": "2"})
+    loader = PrefixLoader({"prefix": inner_loader})
+
+    result = loader.get_loader("prefix/one.txt")
+    assert result is not None
+    returned_loader, local_name = result
+    assert returned_loader is inner_loader
+    assert local_name == "one.txt"
+
+
+def test_prefix_loader_get_loader_raises_for_unknown_prefix() -> None:
+    """Verify PrefixLoader.get_loader raises TemplateNotFound for unknown prefix."""
+    loader = PrefixLoader({"a": DictLoader({"one.txt": "1"})})
+
+    with pytest.raises(TemplateNotFound) as exc:
+        loader.get_loader("unknown/one.txt")
+
+    assert exc.value.name == "unknown/one.txt"
+
+
 @pytest.mark.asyncio
 async def test_choice_loader_list_templates_async_unions_and_sorts() -> None:
     loader = ChoiceLoader(
