@@ -1,8 +1,10 @@
 name: CI
 
 on:
-  push:
   pull_request:
+  push:
+    branches:
+      - master
 
 jobs:
   lint:
@@ -43,7 +45,7 @@ jobs:
           enable-cache: true
 
       - name: Install (test extras) via uv
-        run: uv sync --extra test --dev
+        run: uv sync --extra test --extra databases --dev
 
       - name: Pytest
         run: uv run pytest -q

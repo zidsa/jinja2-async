@@ -48,6 +48,36 @@ lint = [
     "ruff>=0.8.0",
     "mypy>=1.13.0",
 ]
+# Database loaders (optional)
+sqlalchemy = [
+    "sqlalchemy[asyncio]>=2.0.0",
+]
+peewee = [
+    "peewee>=3.17.0",
+]
+django = [
+    "django>=4.1",
+    "asgiref>=3.7.0",
+]
+influxdb = [
+    "influxdb-client[async]>=1.40.0",
+]
+# Bytecode cache backends (optional)
+redis = [
+    "redis>=5.0.0",
+]
+# All database loaders
+databases = [
+    "jinja2-async[sqlalchemy]",
+    "jinja2-async[peewee]",
+    "jinja2-async[django]",
+    "jinja2-async[influxdb]",
+]
+# All optional dependencies
+all = [
+    "jinja2-async[databases]",
+    "jinja2-async[redis]",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/jinja2_async"]
