@@ -43,7 +43,7 @@ jobs:
           enable-cache: true
 
       - name: Install (test extras) via uv
-        run: uv sync --extra test --dev
+        run: uv sync --extra test --extra database --dev
 
       - name: Pytest
         run: uv run pytest -q

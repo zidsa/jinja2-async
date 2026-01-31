@@ -8,6 +8,24 @@
 python -m pip install jinja2-async
 ```
 
+#### Optional Dependencies
+
+Install with optional database loaders and caching backends:
+
+```bash
+# Database loaders
+pip install jinja2-async[sqlalchemy]  # SQLAlchemy async support
+pip install jinja2-async[peewee]      # Peewee ORM support
+pip install jinja2-async[django]      # Django ORM support
+pip install jinja2-async[influxdb]    # InfluxDB support
+
+# Bytecode cache backends
+pip install jinja2-async[redis]       # Redis bytecode cache
+
+# Install all optional dependencies
+pip install jinja2-async[all]
+```
+
 ### Basic usage
 
 ```python
