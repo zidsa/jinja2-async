@@ -9,7 +9,7 @@ These loaders require optional dependencies:
 """
 
 import typing as t
-from datetime import UTC, datetime
+from datetime import datetime
 
 from jinja2 import Environment
 from jinja2.exceptions import TemplateNotFound
@@ -45,7 +45,7 @@ try:
         name: Mapped[str] = mapped_column(String(255), primary_key=True)
         source: Mapped[str] = mapped_column(Text, nullable=False)
         updated_at: Mapped[datetime | None] = mapped_column(
-            DateTime(timezone=True), nullable=True, onupdate=lambda: datetime.now(UTC)
+            DateTime(timezone=True), nullable=True, onupdate=lambda: datetime.utcnow()
         )
 
     class SQLAlchemyLoader(AsyncBaseLoader):
