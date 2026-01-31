@@ -129,8 +129,7 @@ try:
 
         def list_templates(self) -> list[str]:
             raise TypeError(
-                "SQLAlchemyLoader requires async context. "
-                "Use list_templates_async()."
+                "SQLAlchemyLoader requires async context. Use list_templates_async()."
             )
 
 except ImportError:
@@ -496,9 +495,7 @@ try:
         def get_source(
             self, environment: Environment, template: str
         ) -> tuple[str, str | None, t.Callable[[], bool] | None]:
-            with InfluxDBClient(
-                url=self.url, token=self.token, org=self.org
-            ) as client:
+            with InfluxDBClient(url=self.url, token=self.token, org=self.org) as client:
                 query_api = client.query_api()
                 query = f'''
                 from(bucket: "{self.bucket}")
@@ -546,9 +543,7 @@ try:
             return source, None, None
 
         def list_templates(self) -> list[str]:
-            with InfluxDBClient(
-                url=self.url, token=self.token, org=self.org
-            ) as client:
+            with InfluxDBClient(url=self.url, token=self.token, org=self.org) as client:
                 query_api = client.query_api()
                 query = f'''
                 from(bucket: "{self.bucket}")
